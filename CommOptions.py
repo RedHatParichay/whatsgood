@@ -1,7 +1,7 @@
 import tkinter as tk
 import socket 
 
-from AudioCall.AudioClient import AudioClient
+from AudioCall import AudioClient
 from GroupChat.ChatClient import ChatClient
 from GroupChat.NicknameDialog import NicknameDialog
 
