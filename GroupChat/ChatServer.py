@@ -1,25 +1,28 @@
+import socket
+import threading
+
 class ChatServer:
 
-def __init__(self, host, port):
-  self.clients = {}   #store connected clients
+    def __init__(self, host, port):
+      self.clients = {}   #store connected clients
 
-  try:
-      #AF_INET = Address format for IPv4
-      #SOCK_STREAM = Socket type for TCP connection
-      self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      self.server_socket.bind((host, port))       #assign port and ip to socket instance
-      self.server_socket.listen()                 #listen for incoming connections
-      print(f"Server listening on {host}:{port}") #output what socket server is listening on
-  except socket.error as e:
-      print(f"Socket error: {e}")
-      self.server_socket.close()
-      return
-  except Exception as e:
-      print(f"Error: {e}")
-      self.server_socket.close()
-      return
+      try:
+          #AF_INET = Address format for IPv4
+          #SOCK_STREAM = Socket type for TCP connection
+          self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+          self.server_socket.bind((host, port))       #assign port and ip to socket instance
+          self.server_socket.listen()                 #listen for incoming connections
+          print(f"Server listening on {host}:{port}") #output what socket server is listening on
+      except socket.error as e:
+          print(f"Socket error: {e}")
+          self.server_socket.close()
+          return
+      except Exception as e:
+          print(f"Error: {e}")
+          self.server_socket.close()
+          return
 
-def handle_client(self, client_socket, client_address):
+    def handle_client(self, client_socket, client_address):
         nickname = "Unknown"  # Default value in case an exception occurs
 
         try:
@@ -61,8 +64,8 @@ def handle_client(self, client_socket, client_address):
                 print(f"{nickname} disconnected")               #output which client disconnected
             except socket.error as close_error:
                 print(f"Error closing socket for {nickname}: {close_error}")
-              
-  def start(self):
+
+    def start(self):
         while True:
             try:
                 client_socket, addr = self.server_socket.accept()    #accept connection
