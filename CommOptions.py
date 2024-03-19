@@ -1,6 +1,7 @@
 import tkinter as tk
+import socket 
 
-from AudioClient import AudioClient
+from AudioCall.AudioClient import AudioClient
 from GroupChat.ChatClient import ChatClient
 from GroupChat.NicknameDialog import NicknameDialog
 
@@ -24,6 +25,7 @@ class CommOptions(tk.Tk):
 
     def group_chat_clicked(self):
 
+        self.NetworkDiscoverer_connection()
         self.withdraw()                             #hide main window
 
         nickname_window = NicknameDialog()          #instantiate nickname dialog window
@@ -57,6 +59,58 @@ class CommOptions(tk.Tk):
 
     def start(self):
         self.mainloop()                                #start tkinter mainloop
+
+
+    ###############################
+    def NetworkDiscoverer_connection(self):
+        connectionSetUp = False
+        while not connectionSetUp:
+
+            NetworkDiscoverer_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            NetworkDiscoverer_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            NetworkDiscoverer_socket.bind(("0.0.0.0", 26767))
+            print("Server is listening...")
+
+            recievedMsg, new_client_address = NetworkDiscoverer_socket.recvfrom(20)
+            print("Response from Client:", recievedMsg.decode())
+
+            if recievedMsg.decode() == "Discover Clients":
+                response = "Client exists"
+                NetworkDiscoverer_socket.sendto(response.encode(), ("255.255.255.255",26868))
+                print("Client exists")
+            elif recievedMsg.decode() == "IP address":
+                response = "IP ACK"
+                NetworkDiscoverer_socket.sendto(response.encode(), ("255.255.255.255",26868))
+                print("IP ACK")
+                self.host = new_client_address[0]
+                connectionSetUp = True
+
+            while True:
+
+                try:
+
+                    NetworkDiscoverer_socket.settimeout(10)
+
+                    recievedMsg, new_client_address = NetworkDiscoverer_socket.recvfrom(20)
+                    print("Response from Client:", recievedMsg.decode())
+                    if recievedMsg.decode() == "Discover Clients":
+                        response = "Client exists"
+                        NetworkDiscoverer_socket.sendto(response.encode(), ("255.255.255.255",26868))
+                        print("Client exists sent")
+                    elif recievedMsg.decode() == "IP address":
+                        response = "IP ACK"
+                        NetworkDiscoverer_socket.sendto(response.encode(), ("255.255.255.255",26868))
+                        print("IP ACK")
+                        self.host = new_client_address[0]
+                        connectionSetUp = True
+
+                except socket.timeout:
+
+                    break
+
+
+            NetworkDiscoverer_socket.close()
+
 
 if __name__ == "__main__":
     comm_options = CommOptions()    #instantiate and start communication options window
