@@ -1,26 +1,29 @@
 import socket
 import threading
+import time
 
 class ChatServer:
+    def __init__(self, host, port, runNetworkDiscoverer):
+        self.clients = {}   #store connected clients
+        if runNetworkDiscoverer:
+            NetworkDiscoverer_thread = threading.Thread(target=self.NetworkDiscoverer_connection)
+            NetworkDiscoverer_thread.start()
 
-    def __init__(self, host, port):
-      self.clients = {}   #store connected clients
-
-      try:
-          #AF_INET = Address format for IPv4
-          #SOCK_STREAM = Socket type for TCP connection
-          self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-          self.server_socket.bind((host, port))       #assign port and ip to socket instance
-          self.server_socket.listen()                 #listen for incoming connections
-          print(f"Server listening on {host}:{port}") #output what socket server is listening on
-      except socket.error as e:
-          print(f"Socket error: {e}")
-          self.server_socket.close()
-          return
-      except Exception as e:
-          print(f"Error: {e}")
-          self.server_socket.close()
-          return
+        try:
+            #AF_INET = Address format for IPv4
+            #SOCK_STREAM = Socket type for TCP connection
+            self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server_socket.bind((host, port))       #assign port and ip to socket instance
+            self.server_socket.listen()                 #listen for incoming connections
+            print(f"Server listening on {host}:{port}") #output what socket server is listening on
+        except socket.error as e:
+            print(f"Socket error: {e}")
+            self.server_socket.close()
+            return
+        except Exception as e:
+            print(f"Error: {e}")
+            self.server_socket.close()
+            return
 
     def handle_client(self, client_socket, client_address):
         nickname = "Unknown"  # Default value in case an exception occurs
@@ -48,7 +51,6 @@ class ChatServer:
             print(f"Socket error receiving data: {receive_error}")
         except Exception as e:
             print(f"Error: {e}")
-
         finally:
             #remove the client on disconnection
             if client_socket in self.clients:
@@ -81,3 +83,52 @@ class ChatServer:
                 break
 
         self.server_socket.close()
+
+
+
+    def send_udp_packet(self, msg):
+        data = msg.encode()
+        while True:
+            # Create a UDP socket
+            udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            udp_socket.bind(("0.0.0.0", 26868))
+            
+            try:
+                # Send the UDP packet
+
+                #######udp_socket.sendto(data, (server_address, server_port))
+                udp_socket.sendto(data, ("255.255.255.255",26767))
+                print(msg, "sent")
+                
+                # Set a timeout for receiving response
+                udp_socket.settimeout(3)  # Timeout set to certain seconds
+                
+                # Listen for response
+                response, address = udp_socket.recvfrom(1024)
+                print("Response from Client:", response.decode())
+                return response
+                
+                # Break out of the loop if a response is received
+                break
+                
+            except socket.timeout:
+                print("No response received. Resending the packet...")
+                # Close the socket
+                udp_socket.close()
+
+
+
+    def NetworkDiscoverer_connection(self):
+        while True:
+            self.send_udp_packet("Discover Clients")
+            self.send_udp_packet("IP address")
+            time.sleep(12)
+
+
+
+
+
+if __name__ == "__main__":                      #instantiate server with chosen socket and start
+    server = ChatServer("0.0.0.0", 65432, True)
+    server.start()
