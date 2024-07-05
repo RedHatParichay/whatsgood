@@ -33,6 +33,12 @@ class ChatServer:
             self.clients[client_socket] = nickname                          #associate nickname to its client connection
             print(f"{client_address} connected with nickname: {nickname}")  #output which user connected
 
+            for other_client, other_nickname in list(self.clients.items()):
+                try:
+                    other_client.send(f"{nickname} connected to the chat.".encode("utf-8"))
+                except socket.error as send_error:
+                    print(f"Error sending message to {other_nickname}: {send_error}")   
+
             while True:
                 message = client_socket.recv(1024).decode("utf-8")          #recieve and decode message
                 if not message:     #if there is no message, don't print anything
